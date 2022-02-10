@@ -91,24 +91,24 @@ function vitePluginCesium(
         try {
           await fs.copy(
             path.join(cesiumBuildPath, 'Assets'),
-            path.join(outDir, 'mars3d-cesium/Assets')
+            path.join(outDir, 'Cesium/Assets')
           );
           await fs.copy(
             path.join(cesiumBuildPath, 'ThirdParty'),
-            path.join(outDir, 'mars3d-cesium/ThirdParty')
+            path.join(outDir, 'Cesium/ThirdParty')
           );
           await fs.copy(
             path.join(cesiumBuildPath, 'Workers'),
-            path.join(outDir, 'mars3d-cesium/Workers')
+            path.join(outDir, 'Cesium/Workers')
           );
           await fs.copy(
             path.join(cesiumBuildPath, 'Widgets'),
-            path.join(outDir, 'mars3d-cesium/Widgets')
+            path.join(outDir, 'Cesium/Widgets')
           );
           if (!rebuildCesium) {
             await fs.copy(
               path.join(cesiumBuildPath, 'Cesium.js'),
-              path.join(outDir, 'mars3d-cesium/Cesium.js')
+              path.join(outDir, 'Cesium/Cesium.js')
             );
           }
           await fs.copy(
@@ -122,13 +122,20 @@ function vitePluginCesium(
     },
 
     transformIndexHtml() {
-      const tags: HtmlTagDescriptor[] = [
-        {
+      const tags: HtmlTagDescriptor[] = [];
+      if (isBuild && !rebuildCesium) {
+        tags.push({
+          tag: 'script',
+          attrs: { src: normalizePath(path.join(base, 'Cesium/Cesium.js')) }
+        });
+      }
+      if (isBuild) {
+        tags.push( {
           tag: 'link',
           attrs: {
             rel: 'stylesheet',
             href: normalizePath(
-              path.join(CESIUM_BASE_URL, 'Widgets/widgets.css')
+              path.join('/Cesium/', 'Widgets/widgets.css')
             )
           }
         },
@@ -140,15 +147,7 @@ function vitePluginCesium(
               path.join(MARS3D_BASE_URL, 'mars3d.css')
             )
           }
-        }
-      ];
-      if (isBuild && !rebuildCesium) {
-        tags.push({
-          tag: 'script',
-          attrs: { src: normalizePath(path.join(base, 'mars3d-cesium/Cesium.js')) }
         });
-      }
-      if (isBuild) {
         tags.push({
           tag: 'script',
           attrs: { src: normalizePath(path.join(MARS3D_BASE_URL, 'mars3d.js')) }
