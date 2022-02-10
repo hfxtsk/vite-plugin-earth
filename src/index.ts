@@ -21,10 +21,9 @@ function vitePluginCesium(
   const { rebuildCesium, devMinifyCesium } = options;
 
   const cesiumBuildRootPath = 'node_modules/mars3d-cesium/Build';
-  const cesiumBuildPath = cesiumBuildRootPath + '/Cesium/';
-  const mars3dBuildPath = 'node_modules/mars3d/dist/';
+  const cesiumBuildPath = 'node_modules/mars3d-cesium/Build/Cesium/';const mars3dBuildPath = 'node_modules/mars3d/dist/';
 
-  let CESIUM_BASE_URL = '/cesium/';
+  let CESIUM_BASE_URL = '/mars3d-cesium/';
   let MARS3D_BASE_URL = '/mars3d/';
   let outDir = 'dist';
   let base: string = '/';
@@ -37,52 +36,52 @@ function vitePluginCesium(
       isBuild = command === 'build';
       if (c.base) {
         base = c.base;
-        if (base === '') base = './';
       }
-      if (c.build?.outDir) {
-        outDir = c.build.outDir;
-      }
-      CESIUM_BASE_URL = path.posix.join(base, CESIUM_BASE_URL);
-      const userConfig: UserConfig = {};
+      if (base === '') base = './';
+      if (isBuild) CESIUM_BASE_URL = path.join(base, CESIUM_BASE_URL);
+      const userConfig: UserConfig = {
+        build: {
+          assetsInlineLimit: 0,
+          chunkSizeWarningLimit: 4000
+        },
+        define: {
+          CESIUM_BASE_URL: JSON.stringify(CESIUM_BASE_URL)
+        }
+      };
       if (!isBuild) {
-        // -----------dev-----------
         userConfig.optimizeDeps = {
           exclude: ['mars3d-cesium']
         };
-        userConfig.define = {
-          CESIUM_BASE_URL: JSON.stringify(path.posix.join(base, "mars3d-cesium"))
-          // MARS3D_BASE_URL: JSON.stringify(path.posix.join(base, "mars3d"))
+      }
+      if (isBuild && !rebuildCesium) {
+        userConfig.build!.rollupOptions = {
+          external: ['cesium','mars3d'],
+          plugins: [externalGlobals({ cesium: 'Cesium' }),externalGlobals({ mars3d: 'mars3d' })]
         };
-      } else {
-        // -----------build------------
-        if (rebuildCesium) {
-          // build 1) rebuild cesium library
-          userConfig.build = {
-            assetsInlineLimit: 0,
-            chunkSizeWarningLimit: 5000,
-            rollupOptions: {
-              output: {
-                intro: `window.CESIUM_BASE_URL = "${CESIUM_BASE_URL}";`
-              }
-            }
-          };
-        } else {
-          // build 2) copy Cesium.js later
-          userConfig.build = {
-            rollupOptions: {
-              external: ['cesium','mars3d'],
-              plugins: [externalGlobals({ cesium: 'Cesium' }),externalGlobals({ mars3d: 'mars3d' })]
-            }
-          };
-        }
       }
       return userConfig;
+    },
+
+    async load(id: string) {
+      if (!rebuildCesium) return null;
+      // replace CESIUM_BASE_URL variable in 'cesium/Source/Core/buildModuleUrl.js'
+      if (id.includes('buildModuleUrl')) {
+        let file = fs.readFileSync(id, { encoding: 'utf8' });
+        file = file.replace(
+          /CESIUM_BASE_URL/g,
+          JSON.stringify(CESIUM_BASE_URL)
+        );
+        return file;
+      }
+
+      return null;
     },
 
     configureServer({ middlewares }) {
       const cesiumPath = path.join(
         cesiumBuildRootPath,
-        devMinifyCesium ? 'Cesium' : 'CesiumUnminified'
+        'Cesium'
+        // devMinifyCesium ? 'Cesium' : 'CesiumUnminified'
       );
       middlewares.use(CESIUM_BASE_URL, serveStatic(cesiumPath));
     },
@@ -92,26 +91,26 @@ function vitePluginCesium(
         try {
           await fs.copy(
             path.join(cesiumBuildPath, 'Assets'),
-            path.join(outDir, 'cesium/Assets')
+            path.join(outDir, 'mars3d-cesium/Assets')
           );
           await fs.copy(
             path.join(cesiumBuildPath, 'ThirdParty'),
-            path.join(outDir, 'cesium/ThirdParty')
+            path.join(outDir, 'mars3d-cesium/ThirdParty')
           );
           await fs.copy(
             path.join(cesiumBuildPath, 'Workers'),
-            path.join(outDir, 'cesium/Workers')
+            path.join(outDir, 'mars3d-cesium/Workers')
           );
           await fs.copy(
             path.join(cesiumBuildPath, 'Widgets'),
-            path.join(outDir, 'cesium/Widgets')
+            path.join(outDir, 'mars3d-cesium/Widgets')
           );
           if (!rebuildCesium) {
             await fs.copy(
               path.join(cesiumBuildPath, 'Cesium.js'),
-              path.join(outDir, 'cesium/Cesium.js')
+              path.join(outDir, 'mars3d-cesium/Cesium.js')
             );
-          };
+          }
           await fs.copy(
             path.join(mars3dBuildPath, ''),
             path.join(outDir, 'mars3d')
@@ -146,7 +145,7 @@ function vitePluginCesium(
       if (isBuild && !rebuildCesium) {
         tags.push({
           tag: 'script',
-          attrs: { src: normalizePath(path.join(base, 'cesium/Cesium.js')) }
+          attrs: { src: normalizePath(path.join(base, 'mars3d-cesium/Cesium.js')) }
         });
       }
       if (isBuild) {
