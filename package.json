@@ -1,7 +1,7 @@
 {
-  "name": "vite-plugin-ice-mars3d",
-  "version": "1.0.10",
-  "description": "mars3d library plugin for Vite",
+  "name": "vite-plugin-earth",
+  "version": "1.0.0",
+  "description": "mars3d&cesium library plugin for Vite",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
@@ -41,6 +41,7 @@
     "vite": "^2.7.1"
   },
   "peerDependencies": {
-    "mars3d-cesium": "^1.88.0"
+    "mars3d-cesium": "^1.90.0",
+    "mars3d": "^3.2.0"
   }
 }
