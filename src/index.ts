@@ -1,158 +1,104 @@
-import fs from 'fs-extra';
+/**
+ * @Author: xuwoool@qq.com
+ * @Date: 2022-04-22 13:50:15
+ */
 import path from 'path';
-import externalGlobals from 'rollup-plugin-external-globals';
+import fs from 'fs-extra';
 import serveStatic from 'serve-static';
-import { HtmlTagDescriptor, normalizePath, Plugin, UserConfig } from 'vite';
+import { HtmlTagDescriptor, normalizePath, Plugin } from 'vite';
 
 interface VitePluginCesiumOptions {
-  /**
-   * rebuild cesium library, default: false
-   */
-  rebuildCesium?: boolean;
-  devMinifyCesium?: boolean;
+  libsPath?: String;
+  useUnminified?: Boolean;
+  npmPkgName?: String;
+  useMars3d?: Boolean;
 }
 
 function vitePluginCesium(
   options: VitePluginCesiumOptions = {
-    rebuildCesium: false,
-    devMinifyCesium: false
+    libsPath: 'libs',
+    useUnminified: false,
+    npmPkgName: 'mars3d-cesium',
+    useMars3d: false
   }
 ): Plugin {
-  const { rebuildCesium, devMinifyCesium } = options;
-
-  const cesiumBuildRootPath = 'node_modules/mars3d-cesium/Build';
-  const cesiumBuildPath = 'node_modules/mars3d-cesium/Build/Cesium/';const mars3dBuildPath = 'node_modules/mars3d/dist/';
-
-  let CESIUM_BASE_URL = '/mars3d-cesium/';
-  let MARS3D_BASE_URL = '/mars3d/';
+  const cesiumBuildPath = `./node_modules/${options.npmPkgName}/Build`;
+  let base = '/';
   let outDir = 'dist';
-  let base: string = '/';
-  let isBuild: boolean = false;
+  let isBuild = false;
+  let libsPath = options.libsPath || 'libs';
+  let useUnminified = options.useUnminified || false;
 
   return {
-    name: 'vite-plugin-ice-mars3d',
-
-    config(c, { command }) {
+    name: 'vite-plugin-cesium',
+    config(config, { command }) {
       isBuild = command === 'build';
-      if (c.base) {
-        base = c.base;
-      }
-      if (base === '') base = './';
-      if (isBuild) CESIUM_BASE_URL = path.join(base, CESIUM_BASE_URL);
-      const userConfig: UserConfig = {
-        build: {
-          assetsInlineLimit: 0,
-          chunkSizeWarningLimit: 4000
-        },
-        define: {
-          CESIUM_BASE_URL: JSON.stringify(CESIUM_BASE_URL)
-        }
-      };
-      if (!isBuild) {
-        userConfig.optimizeDeps = {
-          exclude: ['mars3d-cesium']
-        };
-      }
-      if (isBuild && !rebuildCesium) {
-        userConfig.build!.rollupOptions = {
-          external: ['cesium','mars3d'],
-          plugins: [externalGlobals({ cesium: 'Cesium' }),externalGlobals({ mars3d: 'mars3d' })]
-        };
-      }
-      return userConfig;
+      base = config.base || '/';
+      outDir = config.build?.outDir || 'dist';
     },
-
-    async load(id: string) {
-      if (!rebuildCesium) return null;
-      // replace CESIUM_BASE_URL variable in 'cesium/Source/Core/buildModuleUrl.js'
-      if (id.includes('buildModuleUrl')) {
-        let file = fs.readFileSync(id, { encoding: 'utf8' });
-        file = file.replace(
-          /CESIUM_BASE_URL/g,
-          JSON.stringify(CESIUM_BASE_URL)
-        );
-        return file;
-      }
-
-      return null;
-    },
-
     configureServer({ middlewares }) {
-      const cesiumPath = path.join(
-        cesiumBuildRootPath,
-        'Cesium'
-        // devMinifyCesium ? 'Cesium' : 'CesiumUnminified'
+      middlewares.use(
+        `/${libsPath}/Cesium`,
+        serveStatic(
+          normalizePath(
+            path.join(
+              cesiumBuildPath,
+              useUnminified ? 'CesiumUnminified' : 'Cesium'
+            )
+          )
+        )
       );
-      middlewares.use(CESIUM_BASE_URL, serveStatic(cesiumPath));
     },
-
-    async closeBundle() {
+    closeBundle() {
       if (isBuild) {
         try {
-          await fs.copy(
-            path.join(cesiumBuildPath, 'Assets'),
-            path.join(outDir, 'Cesium/Assets')
+          fs.copySync(
+            path.join(cesiumBuildPath, 'Cesium', 'Assets'),
+            path.join(outDir, String(libsPath), 'Cesium', 'Assets')
           );
-          await fs.copy(
-            path.join(cesiumBuildPath, 'ThirdParty'),
-            path.join(outDir, 'Cesium/ThirdParty')
+          fs.copySync(
+            path.join(cesiumBuildPath, 'Cesium', 'ThirdParty'),
+            path.join(outDir, String(libsPath), 'Cesium', 'ThirdParty')
           );
-          await fs.copy(
-            path.join(cesiumBuildPath, 'Workers'),
-            path.join(outDir, 'Cesium/Workers')
+          fs.copySync(
+            path.join(cesiumBuildPath, 'Cesium', 'Widgets'),
+            path.join(outDir, String(libsPath), 'Cesium', 'Widgets')
           );
-          await fs.copy(
-            path.join(cesiumBuildPath, 'Widgets'),
-            path.join(outDir, 'Cesium/Widgets')
+          fs.copySync(
+            path.join(cesiumBuildPath, 'Cesium', 'Workers'),
+            path.join(outDir, String(libsPath), 'Cesium', 'Workers')
           );
-          if (!rebuildCesium) {
-            await fs.copy(
-              path.join(cesiumBuildPath, 'Cesium.js'),
-              path.join(outDir, 'Cesium/Cesium.js')
-            );
-          }
-          await fs.copy(
-            path.join(mars3dBuildPath, ''),
-            path.join(outDir, 'mars3d')
+          fs.copySync(
+            path.join(cesiumBuildPath, 'Cesium', 'Cesium.js'),
+            path.join(outDir, String(libsPath), 'Cesium', 'Cesium.js')
           );
-        } catch (err) {
-          console.error('copy failed', err);
-        }
+        } catch (e) {}
       }
     },
 
     transformIndexHtml() {
-      const tags: HtmlTagDescriptor[] = [];
-      if (isBuild && !rebuildCesium) {
-        tags.push({
-          tag: 'script',
-          attrs: { src: normalizePath(path.join(base, 'Cesium/Cesium.js')) }
-        });
-      }
-      if (isBuild) {
-        tags.push( {
-          tag: 'link',
-          attrs: {
-            rel: 'stylesheet',
-            href: normalizePath(
-              path.join('/Cesium/', 'Widgets/widgets.css')
-            )
-          }
+      let tags: HtmlTagDescriptor[] = [];
+      tags.push({
+        tag: 'script',
+        attrs: {
+          src: normalizePath(
+            path.join(base, String(libsPath), 'Cesium', 'Cesium.js')
+          )
         },
-        {
-          tag: 'link',
-          attrs: {
-            rel: 'stylesheet',
-            href: normalizePath(
-              path.join(MARS3D_BASE_URL, 'mars3d.css')
-            )
-          }
-        });
-        tags.push({
-          tag: 'script',
-          attrs: { src: normalizePath(path.join(MARS3D_BASE_URL, 'mars3d.js')) }
-        });
-      }
+        injectTo: 'head'
+      });
+
+      tags.push({
+        tag: 'link',
+        attrs: {
+          rel: 'stylesheet',
+          href: normalizePath(
+            path.join(base, String(libsPath), 'Cesium', 'Widgets/widgets.css')
+          )
+        },
+        injectTo: 'head'
+      });
+
       return tags;
     }
   };
