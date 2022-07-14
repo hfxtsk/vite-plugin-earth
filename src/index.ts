@@ -7,30 +7,28 @@ import fs from 'fs-extra';
 import serveStatic from 'serve-static';
 import { HtmlTagDescriptor, normalizePath, Plugin } from 'vite';
 
-interface VitePluginCesiumOptions {
-  libsPath?: String;
-  useUnminified?: Boolean;
-  npmPkgName?: String;
-  useMars3d?: Boolean;
+interface PluginOptions {
+  libPath: String;
+  useUnminified: Boolean;
+  pkgName: 'mars3d-cesium' | 'cesium';
 }
 
-function vitePluginCesium(
-  options: VitePluginCesiumOptions = {
-    libsPath: 'libs',
+function vitePluginEarth(
+  options: PluginOptions = {
+    libPath: 'lib',
     useUnminified: false,
-    npmPkgName: 'mars3d-cesium',
-    useMars3d: false
+    pkgName: 'cesium'
   }
 ): Plugin {
-  const cesiumBuildPath = `./node_modules/${options.npmPkgName}/Build`;
+  const cesiumBuildPath = `./node_modules/${options.pkgName}/Build`;
   let base = '/';
   let outDir = 'dist';
   let isBuild = false;
-  let libsPath = options.libsPath || 'libs';
+  let libPath = options.libPath || 'lib';
   let useUnminified = options.useUnminified || false;
 
   return {
-    name: 'vite-plugin-cesium',
+    name: 'vite-plugin-earth',
     config(config, { command }) {
       isBuild = command === 'build';
       base = config.base || '/';
@@ -38,7 +36,7 @@ function vitePluginCesium(
     },
     configureServer({ middlewares }) {
       middlewares.use(
-        `/${libsPath}/Cesium`,
+        `/${libPath}/Cesium`,
         serveStatic(
           normalizePath(
             path.join(
@@ -53,24 +51,8 @@ function vitePluginCesium(
       if (isBuild) {
         try {
           fs.copySync(
-            path.join(cesiumBuildPath, 'Cesium', 'Assets'),
-            path.join(outDir, String(libsPath), 'Cesium', 'Assets')
-          );
-          fs.copySync(
-            path.join(cesiumBuildPath, 'Cesium', 'ThirdParty'),
-            path.join(outDir, String(libsPath), 'Cesium', 'ThirdParty')
-          );
-          fs.copySync(
-            path.join(cesiumBuildPath, 'Cesium', 'Widgets'),
-            path.join(outDir, String(libsPath), 'Cesium', 'Widgets')
-          );
-          fs.copySync(
-            path.join(cesiumBuildPath, 'Cesium', 'Workers'),
-            path.join(outDir, String(libsPath), 'Cesium', 'Workers')
-          );
-          fs.copySync(
-            path.join(cesiumBuildPath, 'Cesium', 'Cesium.js'),
-            path.join(outDir, String(libsPath), 'Cesium', 'Cesium.js')
+            path.join(cesiumBuildPath, 'Cesium'),
+            path.join(outDir, String(libPath), 'Cesium')
           );
         } catch (e) {}
       }
@@ -78,22 +60,22 @@ function vitePluginCesium(
 
     transformIndexHtml() {
       let tags: HtmlTagDescriptor[] = [];
-      tags.push({
-        tag: 'script',
-        attrs: {
-          src: normalizePath(
-            path.join(base, String(libsPath), 'Cesium', 'Cesium.js')
-          )
-        },
-        injectTo: 'head'
-      });
 
       tags.push({
         tag: 'link',
         attrs: {
           rel: 'stylesheet',
           href: normalizePath(
-            path.join(base, String(libsPath), 'Cesium', 'Widgets/widgets.css')
+            path.join(base, String(libPath), 'Cesium/Widgets/widgets.css')
+          )
+        },
+        injectTo: 'head'
+      });
+      tags.push({
+        tag: 'script',
+        attrs: {
+          src: normalizePath(
+            path.join(base, String(libPath), 'Cesium/Cesium.js')
           )
         },
         injectTo: 'head'
@@ -104,4 +86,4 @@ function vitePluginCesium(
   };
 }
 
-export default vitePluginCesium;
+export default vitePluginEarth;

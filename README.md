@@ -1,6 +1,6 @@
 # ⚡ vite-plugin-earth
 
-Easily set up a [`Cesium`] & [`mars3d`] project in [`Vite`].
+Easily set up a [`cesium`] & [`mars3d-cesium`] project in [`Vite`].
 
 [`cesium`]: https://github.com/CesiumGS/cesium
 [`mars3d`]: https://mars3d.cn/
@@ -8,8 +8,7 @@ Easily set up a [`Cesium`] & [`mars3d`] project in [`Vite`].
 ## Install
 
 ```bash
-npm i cesium vite-plugin-earth vite -D
-# yarn add cesium vite-plugin-earth vite -D
+npm i vite-plugin-earth -D
 ```
 
 ## Usage
@@ -18,28 +17,53 @@ add this plugin to `vite.config.js`
 
 ```js
 import { defineConfig } from 'vite';
-import earthPlugin from 'vite-plugin-earth';
+import earth from 'vite-plugin-earth';
 export default defineConfig({
-  plugins: [earthPlugin()]
+  plugins: [earth()]
 });
 ```
 
-add dev command to `package.json`
-
-```json
-"scripts": {
-  "dev": "vite",
-  "build": "vite build"
-}
-```
-
-run:
-
-`yarn dev`
-
 ## Options
 
-**rebuildCesium**
+### **pkgName**
+
+- **Type :** `string`
+- **Default :** `cesium`
+
+`mars3d-cesium` 为`mars3d`对应的依赖库
+
+```js
+import { defineConfig } from 'vite';
+import earth from 'vite-plugin-earth';
+export default defineConfig({
+  plugins: [
+    earth({
+      pkgName: 'mars3d-cesium'
+    })
+  ]
+});
+```
+
+### **libPath**
+
+- **Type :** `string`
+- **Default :** `lib`
+
+将类库复制到指定的`lib/`目录下面
+
+```js
+import { defineConfig } from 'vite';
+import earth from 'vite-plugin-earth';
+export default defineConfig({
+  plugins: [
+    earth({
+      libPath: 'lib'
+    })
+  ]
+});
+```
+
+### **rebuildCesium**
 
 - **Type :** `boolean`
 - **Default :** `false`
@@ -48,10 +72,10 @@ Default copy min cesium file to dist. if `true` will rebuild cesium from source.
 
 ```js
 import { defineConfig } from 'vite';
-import earthPlugin from 'vite-plugin-earth';
+import earth from 'vite-plugin-earth';
 export default defineConfig({
   plugins: [
-    earthPlugin({
+    earth({
       rebuildCesium: true
     })
   ]
