@@ -1,89 +1,117 @@
-/**
- * @Author: xuwoool@qq.com
- * @Date: 2022-04-22 13:50:15
- */
-import path from 'path';
 import fs from 'fs-extra';
+import path from 'path';
+import externalGlobals from 'rollup-plugin-external-globals';
 import serveStatic from 'serve-static';
-import { HtmlTagDescriptor, normalizePath, Plugin } from 'vite';
+import { HtmlTagDescriptor, normalizePath, Plugin, UserConfig } from 'vite';
 
-interface PluginOptions {
-  libPath: String;
-  useUnminified: Boolean;
-  pkgName: 'mars3d-cesium' | 'cesium';
+interface VitePluginEarthOptions {
+  /**
+   * rebuild cesium library, default: false
+   */
+  rebuildCesium?: boolean;
+  devMinifyCesium?: boolean;
+  cesiumBuildRootPath?: string;
+  cesiumBuildPath?: string;
 }
 
-function vitePluginEarth(
-  options: PluginOptions = {
-    libPath: 'lib',
-    useUnminified: false,
-    pkgName: 'cesium'
-  }
-): Plugin {
-  const cesiumBuildPath = `./node_modules/${options.pkgName}/Build`;
-  let base = '/';
+export default function vitePluginEarth(options: VitePluginEarthOptions = {}): Plugin {
+  const {
+    rebuildCesium = false,
+    devMinifyCesium = false,
+    cesiumBuildRootPath = 'node_modules/cesium/Build',
+    cesiumBuildPath = 'node_modules/cesium/Build/Cesium/'
+  } = options;
+
+  let CESIUM_BASE_URL = 'cesium/';
   let outDir = 'dist';
-  let isBuild = false;
-  let libPath = options.libPath || 'lib';
-  let useUnminified = options.useUnminified || false;
+  let base: string = '/';
+  let isBuild: boolean = false;
 
   return {
     name: 'vite-plugin-earth',
-    config(config, { command }) {
+
+    config(c, { command }) {
       isBuild = command === 'build';
-      base = config.base || '/';
-      outDir = config.build?.outDir || 'dist';
+      if (c.base) {
+        base = c.base;
+        if (base === '') base = './';
+      }
+      if (c.build?.outDir) {
+        outDir = c.build.outDir;
+      }
+      CESIUM_BASE_URL = path.posix.join(base, CESIUM_BASE_URL);
+      const userConfig: UserConfig = {};
+      if (!isBuild) {
+        // -----------dev-----------
+        userConfig.define = {
+          CESIUM_BASE_URL: JSON.stringify(CESIUM_BASE_URL)
+        };
+      } else {
+        // -----------build------------
+        if (rebuildCesium) {
+          // build 1) rebuild cesium library
+          userConfig.build = {
+            assetsInlineLimit: 0,
+            chunkSizeWarningLimit: 5000,
+            rollupOptions: {
+              output: {
+                intro: `window.CESIUM_BASE_URL = "${CESIUM_BASE_URL}";`
+              }
+            }
+          };
+        } else {
+          // build 2) copy Cesium.js later
+          userConfig.build = {
+            rollupOptions: {
+              external: ['cesium'],
+              plugins: [externalGlobals({ cesium: 'Cesium' })]
+            }
+          };
+        }
+      }
+      return userConfig;
     },
+
     configureServer({ middlewares }) {
-      middlewares.use(
-        `/${libPath}/Cesium`,
-        serveStatic(
-          normalizePath(
-            path.join(
-              cesiumBuildPath,
-              useUnminified ? 'CesiumUnminified' : 'Cesium'
-            )
-          )
-        )
-      );
+      const cesiumPath = path.join(cesiumBuildRootPath, devMinifyCesium ? 'Cesium' : 'CesiumUnminified');
+      middlewares.use(path.posix.join('/', CESIUM_BASE_URL), serveStatic(cesiumPath));
     },
-    closeBundle() {
+
+    async closeBundle() {
       if (isBuild) {
         try {
-          fs.copySync(
-            path.join(cesiumBuildPath, 'Cesium'),
-            path.join(outDir, String(libPath), 'Cesium')
-          );
-        } catch (e) {}
+          await fs.copy(path.join(cesiumBuildPath, 'Assets'), path.join(outDir, 'cesium/Assets'));
+          await fs.copy(path.join(cesiumBuildPath, 'ThirdParty'), path.join(outDir, 'cesium/ThirdParty'));
+          await fs.copy(path.join(cesiumBuildPath, 'Workers'), path.join(outDir, 'cesium/Workers'));
+          await fs.copy(path.join(cesiumBuildPath, 'Widgets'), path.join(outDir, 'cesium/Widgets'));
+          if (!rebuildCesium) {
+            await fs.copy(path.join(cesiumBuildPath, 'Cesium.js'), path.join(outDir, 'cesium/Cesium.js'));
+          }
+        } catch (err) {
+          console.error('copy failed', err);
+        }
       }
     },
 
     transformIndexHtml() {
-      let tags: HtmlTagDescriptor[] = [];
-
-      tags.push({
-        tag: 'link',
-        attrs: {
-          rel: 'stylesheet',
-          href: normalizePath(
-            path.join(base, String(libPath), 'Cesium/Widgets/widgets.css')
-          )
-        },
-        injectTo: 'head'
-      });
-      tags.push({
-        tag: 'script',
-        attrs: {
-          src: normalizePath(
-            path.join(base, String(libPath), 'Cesium/Cesium.js')
-          )
-        },
-        injectTo: 'head'
-      });
-
+      const tags: HtmlTagDescriptor[] = [
+        {
+          tag: 'link',
+          attrs: {
+            rel: 'stylesheet',
+            href: normalizePath(path.join(CESIUM_BASE_URL, 'Widgets/widgets.css'))
+          }
+        }
+      ];
+      if (isBuild && !rebuildCesium) {
+        tags.push({
+          tag: 'script',
+          attrs: {
+            src: normalizePath(path.join(CESIUM_BASE_URL, 'Cesium.js'))
+          }
+        });
+      }
       return tags;
     }
   };
 }
-
-export default vitePluginEarth;
