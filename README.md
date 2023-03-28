@@ -1,65 +1,70 @@
-# ⚡ vite-plugin-cesium
+# ⚡ vite-plugin-earth
 
-[![npm](https://img.shields.io/npm/v/vite-plugin-cesium.svg)](https://www.npmjs.com/package/vite-plugin-cesium)
-[![npm](https://img.shields.io/npm/dt/vite-plugin-cesium)](https://www.npmjs.com/package/vite-plugin-cesium)
+[![npm](https://img.shields.io/npm/v/vite-plugin-earth.svg)](https://www.npmjs.com/package/vite-plugin-earth)
+[![npm](https://img.shields.io/npm/dt/vite-plugin-earth)](https://www.npmjs.com/package/vite-plugin-earth)
 
-Easily set up a [`Cesium`] project in [`Vite`].
+Easily set up a [`Cesium`] & [`Mars3D`] project in [`Vite`].
 
-[`cesium`]: https://github.com/CesiumGS/cesium
-[`vite`]: https://github.com/vitejs/vite
+[`cesium`]: https://cesium.com/platform/cesiumjs/
+[`vite`]: https://vitejs.dev/
+[`Mars3D`]: http://mars3d.cn/
 
-**update：** if you just wanna a scaffolding by using this plugin, try a simply command `yarn create cesium`, click [create-cesium](https://www.npmjs.com/package/create-cesium) for more info.
+## Cesium
 
-Chinese tutorial: [中文教程](https://zhuanlan.zhihu.com/p/354856692)
-
-## Install
+### Install
 
 ```bash
-npm i cesium vite-plugin-cesium vite -D
-# yarn add cesium vite-plugin-cesium vite -D
+npm i cesium vite-plugin-earth vite -D
 ```
 
-## Usage
+### Usage
 
 add this plugin to `vite.config.js`
 
 ```js
 import { defineConfig } from 'vite';
-import cesium from 'vite-plugin-cesium';
+import earth from 'vite-plugin-earth';
 export default defineConfig({
-  plugins: [cesium()]
+  plugins: [earth()]
 });
 ```
 
-add dev command to `package.json`
+## Mars3D
 
-```json
-"scripts": {
-  "dev": "vite",
-  "build": "vite build"
-}
+### Install
+
+```bash
+npm i mars3d mars3d-cesium vite-plugin-earth vite -D
 ```
 
-run:
+### Usage
 
-`yarn dev`
-
-## Options
-
-**rebuildCesium**
-
-- **Type :** `boolean`
-- **Default :** `false`
-
-Default copy min cesium file to dist. if `true` will rebuild cesium from source.
+add this plugin to `vite.config.js`
 
 ```js
 import { defineConfig } from 'vite';
-import cesium from 'vite-plugin-cesium';
+import earth from 'vite-plugin-earth';
+export default defineConfig({
+  plugins: [earth({ useMars3D: true })]
+});
+```
+
+## Options
+
+**useCDN**
+
+- **Type :** `object`
+- **Default :** `{ mars3d: '3.5.0', mars3dCesium: '1.103.1', cesium: '1.103.0', turf: '6.5.0' }`
+
+打包时使用 cdn 方式
+
+```js
+import { defineConfig } from 'vite';
+import earth from 'vite-plugin-earth';
 export default defineConfig({
   plugins: [
-    cesium({
-      rebuildCesium: true
+    earth({
+      useCDN: {}
     })
   ]
 });
@@ -67,69 +72,30 @@ export default defineConfig({
 
 ## Demo
 
-`src/index.js`
+### Cesium
+
+```html
+<div id="cesiumContainer"></div>
+```
 
 ```js
 import { Viewer } from 'cesium';
-import './css/main.css';
 
 const viewer = new Viewer('cesiumContainer');
 ```
 
-> or if you like global Cesium object you can write as
-
-```js
-import * as Cesium from 'cesium';
-const viewer = new Cesium.Viewer('cesiumContainer');
-```
-
-`index.html`
+### Mars3D
 
 ```html
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>cesium-vite</title>
-    <script type="module" src="/src/index.js"></script>
-  </head>
-
-  <body>
-    <div id="cesiumContainer"></div>
-  </body>
-</html>
+<div id="mars3dContainer"></div>
 ```
 
-`src/css/main.css`
+```js
+import * as mars3d from 'mars3d';
+import 'mars3d/dist/mars3d.css';
 
-```css
-html,
-body,
-#cesiumContainer {
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
-}
+const map = new mars3d.Map('mars3dContainer', {});
 ```
-
-Add `dev` and `build` commands to `package.json`
-
-```
-"scripts": {
-    "dev": "vite",
-    "build": "vite build"
-},
-```
-
-Run `yarn dev`
-
-For full demo project please check [./demo](https://github.com/nshen/vite-plugin-cesium/tree/main/demo) folder.
-
-##
 
 ## License
 

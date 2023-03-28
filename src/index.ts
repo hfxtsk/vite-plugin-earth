@@ -13,6 +13,12 @@ interface VitePluginEarthOptions {
   cesiumBuildRootPath?: string;
   cesiumBuildPath?: string;
   useMars3D?: boolean;
+  useCDN?: {
+    mars3d?: string;
+    mars3dCesium?: string;
+    cesium?: string;
+    turf?: string;
+  };
 }
 
 export default function vitePluginEarth(options: VitePluginEarthOptions = {}): Plugin {
@@ -21,8 +27,16 @@ export default function vitePluginEarth(options: VitePluginEarthOptions = {}): P
     rebuildCesium = false,
     devMinifyCesium = false,
     cesiumBuildRootPath = `node_modules/${CESIUM_NAME}/Build`,
-    cesiumBuildPath = `node_modules/${CESIUM_NAME}/Build/Cesium/`
+    cesiumBuildPath = `node_modules/${CESIUM_NAME}/Build/Cesium/`,
+    useMars3D = false,
+    useCDN = null
   } = options;
+
+  // 默认使用的版本号
+  let cdnVersion = Object.assign(
+    { mars3d: '3.5.0', mars3dCesium: '1.103.1', cesium: '1.103.0', turf: '6.5.0' },
+    useCDN
+  );
 
   let CESIUM_BASE_URL = `${CESIUM_NAME}/`;
   let MARS3D_BASE_URL = `mars3d/`;
@@ -69,7 +83,7 @@ export default function vitePluginEarth(options: VitePluginEarthOptions = {}): P
           let external = ['cesium'];
           let plugins = [externalGlobals({ cesium: 'Cesium' })];
 
-          if (options.useMars3D) {
+          if (useMars3D) {
             external.push('mars3d');
             plugins.push(externalGlobals({ mars3d: 'mars3d' }));
           }
@@ -86,7 +100,7 @@ export default function vitePluginEarth(options: VitePluginEarthOptions = {}): P
     },
 
     configureServer({ middlewares }) {
-      if (options.useMars3D) {
+      if (useMars3D) {
         const cesiumPath = path.join(cesiumBuildRootPath, 'Cesium');
         middlewares.use(path.posix.join('/', CESIUM_BASE_URL), serveStatic(cesiumPath));
 
@@ -99,7 +113,7 @@ export default function vitePluginEarth(options: VitePluginEarthOptions = {}): P
     },
 
     async closeBundle() {
-      if (isBuild) {
+      if (isBuild && !useCDN) {
         try {
           await fs.copy(path.join(cesiumBuildPath, 'Assets'), path.join(outDir, `${CESIUM_NAME}/Assets`));
           await fs.copy(path.join(cesiumBuildPath, 'ThirdParty'), path.join(outDir, `${CESIUM_NAME}/ThirdParty`));
@@ -109,7 +123,7 @@ export default function vitePluginEarth(options: VitePluginEarthOptions = {}): P
             await fs.copy(path.join(cesiumBuildPath, 'Cesium.js'), path.join(outDir, `${CESIUM_NAME}/Cesium.js`));
           }
 
-          if (options.useMars3D) {
+          if (useMars3D) {
             await fs.copy(path.join(`node_modules/mars3d/`, 'dist'), path.join(outDir, 'mars3d'));
           }
         } catch (err) {
@@ -119,41 +133,88 @@ export default function vitePluginEarth(options: VitePluginEarthOptions = {}): P
     },
 
     transformIndexHtml() {
-      const tags: HtmlTagDescriptor[] = [
-        {
-          tag: 'link',
-          attrs: {
-            rel: 'stylesheet',
-            href: normalizePath(path.join(CESIUM_BASE_URL, 'Widgets/widgets.css'))
-          }
-        }
-      ];
-      if (isBuild && !rebuildCesium) {
-        tags.push({
-          tag: 'script',
-          attrs: {
-            src: normalizePath(path.join(CESIUM_BASE_URL, 'Cesium.js'))
-          }
-        });
-      }
-
-      if (options.useMars3D) {
+      const tags: HtmlTagDescriptor[] = [];
+      if (useCDN) {
+        let cesiumVersion = useMars3D ? cdnVersion.mars3dCesium : cdnVersion.cesium;
         tags.push(
           {
             tag: 'link',
             attrs: {
               rel: 'stylesheet',
-              href: normalizePath(path.join(MARS3D_BASE_URL, 'mars3d.css'))
+              href: `https://unpkg.com/${CESIUM_NAME}@${cesiumVersion}/Build/Cesium/Widgets/widgets.css`
             }
           },
           {
             tag: 'script',
+            children: `window['CESIUM_BASE_URL'] = 'https://unpkg.com/${CESIUM_NAME}@${cesiumVersion}/Build/Cesium'`
+          },
+          {
+            tag: 'script',
             attrs: {
-              src: normalizePath(path.join(MARS3D_BASE_URL, 'mars3d.js'))
+              src: `https://unpkg.com/${CESIUM_NAME}@${cesiumVersion}/Build/Cesium/Cesium.js`
             }
           }
         );
+
+        if (useMars3D) {
+          tags.push(
+            {
+              tag: 'link',
+              attrs: {
+                rel: 'stylesheet',
+                href: `https://unpkg.com/mars3d@${cdnVersion.mars3d}/dist/mars3d.css`
+              }
+            },
+            {
+              tag: 'script',
+              attrs: {
+                src: `https://unpkg.com/mars3d@${cdnVersion.mars3d}/dist/mars3d.js`
+              }
+            },
+            {
+              tag: 'script',
+              attrs: {
+                src: `https://unpkg.com/@turf/turf@${cdnVersion.turf}/turf.min.js`
+              }
+            }
+          );
+        }
+      } else {
+        tags.push({
+          tag: 'link',
+          attrs: {
+            rel: 'stylesheet',
+            href: normalizePath(path.join(CESIUM_BASE_URL, 'Widgets/widgets.css'))
+          }
+        });
+        if (isBuild && !rebuildCesium) {
+          tags.push({
+            tag: 'script',
+            attrs: {
+              src: normalizePath(path.join(CESIUM_BASE_URL, 'Cesium.js'))
+            }
+          });
+        }
+
+        if (useMars3D) {
+          tags.push(
+            {
+              tag: 'link',
+              attrs: {
+                rel: 'stylesheet',
+                href: normalizePath(path.join(MARS3D_BASE_URL, 'mars3d.css'))
+              }
+            },
+            {
+              tag: 'script',
+              attrs: {
+                src: normalizePath(path.join(MARS3D_BASE_URL, 'mars3d.js'))
+              }
+            }
+          );
+        }
       }
+
       return tags;
     }
   };
