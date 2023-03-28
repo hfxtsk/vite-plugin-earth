@@ -52,6 +52,7 @@
   },
   "peerDependencies": {
     "cesium": "^1.95.0",
+    "@turf/turf": "^6.5.0",
     "mars3d-cesium": "^1.90.0",
     "mars3d": "^3.2.0",
     "vite": ">=2.7.1"
