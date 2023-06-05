@@ -9,12 +9,12 @@
     "serve": "vite build && vite preview"
   },
   "devDependencies": {
-    "vite": "^3.0.4",
+    "vite": "^4.3.4",
     "vite-plugin-earth": "link:.."
   },
   "dependencies": {
     "@turf/turf": "^6.5.0",
-    "mars3d": "^3.5.0",
-    "mars3d-cesium": "^1.103.1"
+    "mars3d": "^3.5.4",
+    "mars3d-cesium": "^1.104.3"
   }
 }

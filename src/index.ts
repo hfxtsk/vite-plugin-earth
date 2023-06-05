@@ -13,12 +13,13 @@ interface VitePluginEarthOptions {
   cesiumBuildRootPath?: string;
   cesiumBuildPath?: string;
   useMars3D?: boolean;
-  useCDN?: {
-    mars3d?: string;
-    mars3dCesium?: string;
-    cesium?: string;
-    turf?: string;
-  };
+  useCDN?:
+    | {
+        mars3d?: string;
+        mars3dCesium?: string;
+        turf?: string;
+      }
+    | { cesium?: string };
 }
 
 export default function vitePluginEarth(options: VitePluginEarthOptions = {}): Plugin {
@@ -27,14 +28,14 @@ export default function vitePluginEarth(options: VitePluginEarthOptions = {}): P
     rebuildCesium = false,
     devMinifyCesium = false,
     cesiumBuildRootPath = `node_modules/${CESIUM_NAME}/Build`,
-    cesiumBuildPath = `node_modules/${CESIUM_NAME}/Build/Cesium/`,
+    cesiumBuildPath = `${cesiumBuildRootPath}/Cesium/`,
     useMars3D = false,
     useCDN = null
   } = options;
 
   // 默认使用的版本号
   let cdnVersion = Object.assign(
-    { mars3d: '3.5.0', mars3dCesium: '1.103.1', cesium: '1.103.0', turf: '6.5.0' },
+    { mars3d: '3.5.0', mars3dCesium: '1.103.1', cesium: '1.105.0', turf: '6.5.0' },
     useCDN
   );
 
@@ -80,7 +81,7 @@ export default function vitePluginEarth(options: VitePluginEarthOptions = {}): P
           };
         } else {
           // build 2) copy Cesium.js later
-          let external = ['cesium'];
+          let external = [CESIUM_NAME];
           let plugins = [externalGlobals({ cesium: 'Cesium' })];
 
           if (useMars3D) {
@@ -191,7 +192,7 @@ export default function vitePluginEarth(options: VitePluginEarthOptions = {}): P
           tags.push({
             tag: 'script',
             attrs: {
-              src: normalizePath(path.join(CESIUM_BASE_URL, 'Cesium.js'))
+              src: normalizePath(path.join(base, `${CESIUM_NAME}/Cesium.js`))
             }
           });
         }
