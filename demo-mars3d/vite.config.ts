@@ -1,10 +1,6 @@
 import { defineConfig } from 'vite';
-import earth from 'vite-plugin-earth';
+import { mars3dPlugin } from 'vite-plugin-earth';
 
 export default defineConfig({
-  plugins: [
-    earth({
-      useMars3D: true
-    })
-  ]
+  plugins: [mars3dPlugin()]
 });
