@@ -7,7 +7,7 @@ Easily set up a [`Cesium`] & [`Mars3D`] project in [`Vite`].
 
 [`cesium`]: https://cesium.com/platform/cesiumjs/
 [`vite`]: https://vitejs.dev/
-[`Mars3D`]: http://mars3d.cn/
+[`mars3d`]: http://mars3d.cn/
 
 ## Cesium
 
@@ -23,9 +23,9 @@ add this plugin to `vite.config.js`
 
 ```js
 import { defineConfig } from 'vite';
-import earth from 'vite-plugin-earth';
+import { cesiumPlugin } from 'vite-plugin-earth';
 export default defineConfig({
-  plugins: [earth()]
+  plugins: [cesiumPlugin()]
 });
 ```
 
@@ -43,9 +43,9 @@ add this plugin to `vite.config.js`
 
 ```js
 import { defineConfig } from 'vite';
-import earth from 'vite-plugin-earth';
+import { mars3dPlugin } from 'vite-plugin-earth';
 export default defineConfig({
-  plugins: [earth({ useMars3D: true })]
+  plugins: [mars3dPlugin()]
 });
 ```
 
@@ -54,17 +54,17 @@ export default defineConfig({
 **useCDN**
 
 - **Type :** `object`
-- **Default :** `{ mars3d: '3.5.0', mars3dCesium: '1.103.1', cesium: '1.103.0', turf: '6.5.0' }`
+- **Default :** `{ mars3d: '3.5.4', mars3dCesium: '1.104.3', turf: '6.5.0' }`
 
 打包时使用 cdn 方式
 
 ```js
 import { defineConfig } from 'vite';
-import earth from 'vite-plugin-earth';
+import { mars3dPlugin } from 'vite-plugin-earth';
 export default defineConfig({
   plugins: [
-    earth({
-      useCDN: {}
+    mars3dPlugin({
+      useCDN: true
     })
   ]
 });
