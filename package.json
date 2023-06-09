@@ -1,6 +1,6 @@
 {
   "name": "vite-plugin-earth",
-  "version": "2.1.1",
+  "version": "2.1.2",
   "description": "Cesium & Mars3D library plugin for Vite",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -37,7 +37,7 @@
   },
   "dependencies": {
     "fs-extra": "^9.1.0",
-    "rollup-plugin-external-globals": "^0.6.1",
+    "rollup-plugin-external-globals": "^0.8.0",
     "serve-static": "^1.14.1"
   },
   "devDependencies": {
@@ -48,7 +48,7 @@
     "prettier": "^2.2.1",
     "tsup": "^6.2.1",
     "typescript": "^4.2.2",
-    "vite": "^4.3.4"
+    "vite": "^4.3.9"
   },
   "peerDependencies": {
     "vite": ">=2.7.1"

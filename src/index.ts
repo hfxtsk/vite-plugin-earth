@@ -90,16 +90,16 @@ export function mars3dPlugin(options: VitePluginMars3dOptions = {}): Plugin {
           };
         } else {
           // build 2) copy Cesium.js later
-          let external = [CESIUM_NAME];
-          let plugins = [externalGlobals({ cesium: 'Cesium' })];
-
-          external.push('mars3d');
-          plugins.push(externalGlobals({ mars3d: 'mars3d' }));
+          const external = [CESIUM_NAME, 'mars3d'];
+          const globalsLibs = {
+            mars3d: 'mars3d',
+            'mars3d-cesium': 'Cesium'
+          };
 
           userConfig.build = {
             rollupOptions: {
               external: external,
-              plugins: plugins
+              plugins: [externalGlobals(globalsLibs)]
             }
           };
         }
@@ -189,8 +189,13 @@ export function mars3dPlugin(options: VitePluginMars3dOptions = {}): Plugin {
         if (isBuild && !rebuildCesium) {
           tags.push({
             tag: 'script',
+            children: `window['CESIUM_BASE_URL'] = '${CESIUM_BASE_URL}'`
+          });
+
+          tags.push({
+            tag: 'script',
             attrs: {
-              src: normalizePath(path.join(base, `${CESIUM_NAME}/Cesium.js`))
+              src: normalizePath(path.join(CESIUM_BASE_URL, `Cesium.js`))
             }
           });
         }
@@ -203,7 +208,7 @@ export function mars3dPlugin(options: VitePluginMars3dOptions = {}): Plugin {
           }
         });
 
-        if (isBuild && !rebuildCesium) {
+        if (isBuild) {
           tags.push({
             tag: 'script',
             attrs: {
