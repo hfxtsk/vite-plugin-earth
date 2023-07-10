@@ -1,6 +1,6 @@
 {
   "name": "vite-plugin-earth",
-  "version": "2.1.2",
+  "version": "2.2.0",
   "description": "Cesium & Mars3D library plugin for Vite",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -17,7 +17,11 @@
   },
   "scripts": {
     "dev": "tsup --watch",
+    "dev:cesium": "pnpm run --filter cesium-demo dev",
+    "dev:mars3d": "pnpm run --filter mars3d-demo dev",
     "build": "tsup",
+    "build:cesium": "pnpm run --filter cesium-demo build",
+    "build:mars3d": "pnpm run --filter mars3d-demo build",
     "prepare": "npm run build"
   },
   "keywords": [

@@ -10,7 +10,7 @@
   },
   "devDependencies": {
     "vite": "^4.3.4",
-    "vite-plugin-earth": "link:.."
+    "vite-plugin-earth": "workspace:*"
   },
   "dependencies": {
     "@turf/turf": "^6.5.0",
