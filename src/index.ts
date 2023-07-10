@@ -45,8 +45,8 @@ export function mars3dPlugin(options: VitePluginMars3dOptions = {}): Plugin {
     useCDN = null
   } = options;
 
-  // 默认使用的版本号
-  let cdnVersion = Object.assign({ mars3d: '3.5.4', mars3dCesium: '1.104.3', turf: '6.5.0' }, useCDN);
+  // 默认使用最新版本，可指定版本
+  let cdnVersion = Object.assign({ mars3d: null, mars3dCesium: null, turf: null }, useCDN);
 
   let CESIUM_BASE_URL = `${CESIUM_NAME}/`;
   let MARS3D_BASE_URL = `mars3d/`;
@@ -136,23 +136,26 @@ export function mars3dPlugin(options: VitePluginMars3dOptions = {}): Plugin {
     transformIndexHtml() {
       const tags: HtmlTagDescriptor[] = [];
       if (useCDN) {
-        let cesiumVersion = cdnVersion.mars3dCesium;
+        let cesiumVersion = cdnVersion.mars3dCesium ? `@${cdnVersion.mars3dCesium}` : '';
+        let mars3dVersion = cdnVersion.mars3d ? `@${cdnVersion.mars3d}` : '';
+        let turfVersion = cdnVersion.turf ? `@${cdnVersion.turf}` : '';
+
         tags.push(
           {
             tag: 'link',
             attrs: {
               rel: 'stylesheet',
-              href: `https://unpkg.com/${CESIUM_NAME}@${cesiumVersion}/Build/Cesium/Widgets/widgets.css`
+              href: `https://unpkg.com/${CESIUM_NAME}${cesiumVersion}/Build/Cesium/Widgets/widgets.css`
             }
           },
           {
             tag: 'script',
-            children: `window['CESIUM_BASE_URL'] = 'https://unpkg.com/${CESIUM_NAME}@${cesiumVersion}/Build/Cesium'`
+            children: `window['CESIUM_BASE_URL'] = 'https://unpkg.com/${CESIUM_NAME}${cesiumVersion}/Build/Cesium'`
           },
           {
             tag: 'script',
             attrs: {
-              src: `https://unpkg.com/${CESIUM_NAME}@${cesiumVersion}/Build/Cesium/Cesium.js`
+              src: `https://unpkg.com/${CESIUM_NAME}${cesiumVersion}/Build/Cesium/Cesium.js`
             }
           }
         );
@@ -162,19 +165,19 @@ export function mars3dPlugin(options: VitePluginMars3dOptions = {}): Plugin {
             tag: 'link',
             attrs: {
               rel: 'stylesheet',
-              href: `https://unpkg.com/mars3d@${cdnVersion.mars3d}/dist/mars3d.css`
+              href: `https://unpkg.com/mars3d${mars3dVersion}/dist/mars3d.css`
             }
           },
           {
             tag: 'script',
             attrs: {
-              src: `https://unpkg.com/mars3d@${cdnVersion.mars3d}/dist/mars3d.js`
+              src: `https://unpkg.com/mars3d${mars3dVersion}/dist/mars3d.js`
             }
           },
           {
             tag: 'script',
             attrs: {
-              src: `https://unpkg.com/@turf/turf@${cdnVersion.turf}/turf.min.js`
+              src: `https://unpkg.com/@turf/turf${turfVersion}/turf.min.js`
             }
           }
         );
@@ -237,8 +240,8 @@ export function cesiumPlugin(options: VitePluginCesiumOptions = {}): Plugin {
     useCDN = null
   } = options;
 
-  // 默认使用的版本号
-  let cdnVersion = Object.assign({ cesium: '1.105.0' }, useCDN);
+  // 默认使用最新版本，可指定任意版本
+  let cdnVersion = Object.assign({ cesium: null }, useCDN);
 
   let CESIUM_BASE_URL = `${CESIUM_NAME}/`;
   let outDir = 'dist';
@@ -317,23 +320,23 @@ export function cesiumPlugin(options: VitePluginCesiumOptions = {}): Plugin {
     transformIndexHtml() {
       const tags: HtmlTagDescriptor[] = [];
       if (useCDN) {
-        let cesiumVersion = cdnVersion.cesium;
+        let cesiumVersion = cdnVersion.cesium ? `@${cdnVersion.cesium}` : '';
         tags.push(
           {
             tag: 'link',
             attrs: {
               rel: 'stylesheet',
-              href: `https://unpkg.com/${CESIUM_NAME}@${cesiumVersion}/Build/Cesium/Widgets/widgets.css`
+              href: `https://unpkg.com/${CESIUM_NAME}${cesiumVersion}/Build/Cesium/Widgets/widgets.css`
             }
           },
           {
             tag: 'script',
-            children: `window['CESIUM_BASE_URL'] = 'https://unpkg.com/${CESIUM_NAME}@${cesiumVersion}/Build/Cesium'`
+            children: `window['CESIUM_BASE_URL'] = 'https://unpkg.com/${CESIUM_NAME}${cesiumVersion}/Build/Cesium'`
           },
           {
             tag: 'script',
             attrs: {
-              src: `https://unpkg.com/${CESIUM_NAME}@${cesiumVersion}/Build/Cesium/Cesium.js`
+              src: `https://unpkg.com/${CESIUM_NAME}${cesiumVersion}/Build/Cesium/Cesium.js`
             }
           }
         );
