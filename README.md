@@ -11,6 +11,8 @@ Easily set up a [`Cesium`] & [`Mars3D`] project in [`Vite`].
 
 ## Cesium
 
+![cesium](https://img.shields.io/npm/v/cesium.svg?label=cesium) 
+
 ### Install
 
 ```bash
@@ -30,6 +32,10 @@ export default defineConfig({
 ```
 
 ## Mars3D
+
+![mars3d](https://img.shields.io/npm/v/mars3d.svg?label=mars3d) 
+![mars3d-cesium](https://img.shields.io/npm/v/mars3d-cesium.svg?label=mars3d-cesium) ![turf](https://img.shields.io/npm/v/@turf/turf.svg?label=turf)
+
 
 ### Install
 
@@ -54,7 +60,7 @@ export default defineConfig({
 **useCDN**
 
 - **Type :** `object`
-- **Default :** `{ mars3d: '3.5.4', mars3dCesium: '1.104.3', turf: '6.5.0' }`
+- **Default :** `{ mars3d: 'latest', mars3dCesium: 'latest', turf: '6.5.0' }`
 
 打包时使用 cdn 方式
 
